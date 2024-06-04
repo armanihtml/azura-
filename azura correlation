@@ -1,0 +1,47 @@
+import pandas as pd
+import plotly.express as px
+from dash import Dash, dcc, html
+from dash.dependencies import Input, Output
+
+
+df = pd.read_csv('data.csv', sep=';')
+
+# Extract necessary columns and convert to appropriate data types
+df['Aantal'] = df['Aantal'].astype(float)
+df['Jaar'] = df['Jaar'].astype(int)
+
+# Initialize the Dash app
+app = Dash(__name__)
+
+
+app.layout = html.Div([
+    html.H1("Number of Students per Major (45-74 years) by Year"),
+    dcc.Dropdown(
+        id='sector-dropdown',
+        options=[{'label': sector, 'value': sector} for sector in df['Sector'].unique()],
+        value=df['Sector'].unique().tolist(),  # Default to all sectors
+        multi=True
+    ),
+    dcc.Graph(id='line-chart')
+])
+
+
+@app.callback(
+    Output('line-chart', 'figure'),
+    [Input('sector-dropdown', 'value')]
+)
+def update_graph(selected_sectors):
+    filtered_df = df[df['Sector'].isin(selected_sectors)]
+    fig = px.line(
+        filtered_df,
+        x='Jaar',
+        y='Aantal',
+        color='Sector',
+        title='Number of Students per Major (45-74 years) by Year'
+    )
+    fig.update_layout(xaxis_title='Year', yaxis_title='Number of Students')
+    return fig
+
+
+if __name__ == '__main__':
+    app.run_server(debug=True)
